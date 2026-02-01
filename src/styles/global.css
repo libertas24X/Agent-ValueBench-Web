@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: 'Manrope', 'Segoe UI', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5 {
+    font-family: 'Fraunces', 'Times New Roman', serif;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply border border-white/10 bg-white/5 backdrop-blur;
+  }
+
+  .section-title {
+    @apply flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.35em] text-slate-400;
+  }
+}

@@ -1,0 +1,146 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { agents, valueSystems, benchmarkMeta } from '../data/avbData';
+
+const base = import.meta.env.BASE_URL;
+const totalDimensions = valueSystems.reduce((sum, system) => sum + system.dimensions.length, 0);
+const featureCards = [
+  {
+    title: 'Multi value systems',
+    detail: 'Cover pluralistic value taxonomies in one unified benchmark view.'
+  },
+  {
+    title: 'Fine-grained dimensions',
+    detail: 'Break systems into actionable, interpretable value signals.'
+  },
+  {
+    title: 'Explainable case-level evidence',
+    detail: 'Attach qualitative cases to every score (future support).'
+  },
+  {
+    title: 'Versioned results & reproducibility',
+    detail: 'Snapshot benchmarks so changes are fully traceable.'
+  },
+  {
+    title: 'Easy to extend',
+    detail: 'Add agents, value systems, or dimensions without rework.'
+  }
+];
+---
+
+<BaseLayout title="Agent-ValueBench" description="Agent-ValueBench: a benchmark for value-oriented evaluation across pluralistic value systems.">
+  <section class="mx-auto w-full max-w-6xl px-6 pb-16 pt-14">
+    <div class="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+      <div class="space-y-6">
+        <div class="section-title">
+          <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-200">
+            <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3v18"></path>
+              <path d="M5 12h14"></path>
+            </svg>
+          </span>
+          What is AVB
+        </div>
+        <div class="space-y-3">
+          <h1 class="text-4xl font-semibold text-white md:text-6xl">{benchmarkMeta.title}</h1>
+          <p class="text-lg text-slate-300">{benchmarkMeta.subtitle}</p>
+        </div>
+        <div class="space-y-4 text-base text-slate-300">
+          <p>
+            Agent-ValueBench evaluates how agents express values, not just how they perform tasks. We treat value alignment as a
+            measurable behavioral profile across real decision contexts.
+          </p>
+          <p>
+            The benchmark contains multiple value systems. Each system is decomposed into fine-grained dimensions, letting you
+            inspect where an agent aligns, diverges, or trades off across norms.
+          </p>
+          <p>
+            Results are designed to be transparent and extensible. You can add new agents, introduce new systems, or publish
+            new benchmark snapshots without rewriting the site.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <a href={`${base}benchmark`} class="rounded-full bg-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950">Explore Benchmark</a>
+          <a href="https://github.com/" class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10">Github</a>
+          <a href="https://arxiv.org/abs/2510.07686" class="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10">Read Paper</a>
+        </div>
+      </div>
+      <div class="glass relative rounded-3xl p-8">
+        <div class="absolute -right-6 top-10 h-28 w-28 rounded-3xl bg-gradient-to-br from-cyan-400/40 to-indigo-400/10 blur-2xl"></div>
+        <div class="space-y-6">
+          <div class="flex items-center gap-4">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-400/20 text-cyan-200">
+              <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 12h16"></path>
+                <path d="M12 4v16"></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Live snapshot</p>
+              <p class="text-xl font-semibold text-white">Draft benchmark preview</p>
+            </div>
+          </div>
+          <div class="grid gap-4 text-sm text-slate-300">
+            <div class="glass rounded-2xl p-4">
+              <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Value systems</p>
+              <p class="text-2xl font-semibold text-white">{valueSystems.length}</p>
+            </div>
+            <div class="glass rounded-2xl p-4">
+              <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Dimensions total</p>
+              <p class="text-2xl font-semibold text-white">{totalDimensions}</p>
+            </div>
+            <div class="glass rounded-2xl p-4">
+              <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Agents listed</p>
+              <p class="text-2xl font-semibold text-white">{agents.length}</p>
+            </div>
+          </div>
+          <div class="text-xs uppercase tracking-[0.3em] text-slate-400">Next update: Q2 2026 (placeholder)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto w-full max-w-6xl px-6 pb-16">
+    <div class="section-title">
+      <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-indigo-400/20 text-indigo-200">
+        <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5l6 6-6 6-6-6 6-6z"></path>
+        </svg>
+      </span>
+      Key features
+    </div>
+    <div class="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {featureCards.map((card) => (
+        <div class="glass rounded-2xl p-6">
+          <p class="text-lg font-semibold text-white">{card.title}</p>
+          <p class="mt-2 text-sm text-slate-300">{card.detail}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="mx-auto w-full max-w-6xl px-6 pb-20">
+    <div class="section-title">
+      <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-400/20 text-amber-200">
+        <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14"></path>
+        </svg>
+      </span>
+      Quick stats
+    </div>
+    <div class="mt-6 grid gap-6 md:grid-cols-3">
+      <div class="glass rounded-2xl p-6">
+        <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Agents</p>
+        <p class="mt-2 text-3xl font-semibold text-white">{agents.length}</p>
+      </div>
+      <div class="glass rounded-2xl p-6">
+        <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Value systems</p>
+        <p class="mt-2 text-3xl font-semibold text-white">{valueSystems.length}</p>
+      </div>
+      <div class="glass rounded-2xl p-6">
+        <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Dimensions</p>
+        <p class="mt-2 text-3xl font-semibold text-white">{totalDimensions}</p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

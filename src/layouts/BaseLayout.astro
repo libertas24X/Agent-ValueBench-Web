@@ -1,0 +1,67 @@
+---
+import '../styles/global.css';
+
+const { title = 'Agent-ValueBench', description = '' } = Astro.props;
+const path = Astro.url.pathname;
+const base = import.meta.env.BASE_URL;
+const navLinks = [
+  { label: 'Home', href: `${base}`, active: path === '/' },
+  { label: 'Benchmark', href: `${base}benchmark`, active: path.startsWith('/benchmark') }
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@300;400;500;600;700&display=swap" />
+    {description ? <meta name="description" content={description} /> : null}
+    <link rel="icon" href={`${base}Agent-ValueBench_logo.png`} />
+  </head>
+  <body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
+    <div class="relative overflow-hidden">
+      <div class="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle_at_center,_rgba(56,189,248,0.25),_transparent_70%)]" aria-hidden="true"></div>
+      <div class="pointer-events-none absolute -left-24 top-32 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle_at_center,_rgba(248,113,113,0.2),_transparent_70%)]" aria-hidden="true"></div>
+    </div>
+
+    <header class="sticky top-0 z-40 border-b border-white/10 bg-slate-950/80 backdrop-blur">
+      <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+        <a href={base} class="flex items-center gap-3">
+          <img src={`${base}Agent-ValueBench_logo.png`} alt="Agent-ValueBench logo" class="h-9 w-9 rounded-lg bg-white/10 p-1" />
+          <div class="leading-tight">
+            <div class="text-lg font-semibold tracking-wide text-white">Agent-ValueBench</div>
+            <div class="text-xs uppercase tracking-[0.3em] text-slate-400">AVB</div>
+          </div>
+        </a>
+        <nav class="flex items-center gap-6 text-sm font-medium">
+          {navLinks.map((link) => (
+            <a
+              href={link.href}
+              class={`transition ${link.active ? 'text-white' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </header>
+
+    <main class="relative">
+      <slot />
+    </main>
+
+    <footer class="border-t border-white/10">
+      <div class="mx-auto flex w-full max-w-6xl flex-col gap-2 px-6 py-8 text-sm text-slate-400 md:flex-row md:items-center md:justify-between">
+        <div>Agent-ValueBench · A living benchmark for value alignment.</div>
+        <div class="flex items-center gap-4">
+          <span>Open research · Draft site</span>
+          <span class="h-1 w-1 rounded-full bg-slate-600"></span>
+          <span>Last updated: February 1, 2026</span>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

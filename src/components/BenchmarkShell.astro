@@ -1,0 +1,244 @@
+---
+import { valueSystems } from '../data/avbData';
+
+const {
+  activeTab = 'benchmarks',
+  title = 'Benchmark',
+  intro = 'Agent-ValueBench evaluates how agents express values across pluralistic systems. The benchmark provides rankings, deep dives, and comparisons with transparent, case-level evidence.'
+} = Astro.props;
+
+const base = import.meta.env.BASE_URL;
+const searchParams = Astro.url.searchParams;
+const defaultSystem = valueSystems[0];
+const selectedSystemId = searchParams.get('system') || defaultSystem.id;
+const selectedSystem = valueSystems.find((system) => system.id === selectedSystemId) || defaultSystem;
+const selectedDimensions = (searchParams.get('dims') || selectedSystem.dimensions.map((dim) => dim.id).join(','))
+  .split(',')
+  .filter(Boolean);
+const queryString = `system=${selectedSystem.id}&dims=${selectedDimensions.join(',')}`;
+
+const tabLinks = [
+  { id: 'benchmarks', label: 'Benchmarks', path: 'benchmark' },
+  { id: 'analysis', label: 'Analysis', path: 'benchmark/analysis' },
+  { id: 'comparison', label: 'Comparison', path: 'benchmark/comparison' }
+];
+---
+
+<section class="mx-auto w-full max-w-6xl px-6 pb-6 pt-10">
+  <div class="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+    <div class="space-y-6">
+      <div class="section-title">
+        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-400/20 text-cyan-200">
+          <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14"></path>
+            <path d="M12 5v14"></path>
+          </svg>
+        </span>
+        Live benchmark layer
+      </div>
+      <div class="space-y-3">
+        <h1 class="text-4xl font-semibold text-white md:text-5xl">{title}</h1>
+        <p class="text-lg text-slate-300">{intro}</p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <div class="glass rounded-full px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-400">Systems: {valueSystems.length}</div>
+        <div class="glass rounded-full px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-400">Dimensions: {valueSystems.reduce((sum, system) => sum + system.dimensions.length, 0)}</div>
+        <div class="glass rounded-full px-4 py-2 text-xs uppercase tracking-[0.3em] text-slate-400">Version: v0.1 draft</div>
+      </div>
+    </div>
+    <div class="glass rounded-3xl p-6">
+      <div class="space-y-4 text-sm text-slate-300">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-indigo-400/20 text-indigo-200">
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M3 12l2-2 4 4 7-7 5 5"></path>
+            </svg>
+          </span>
+          <div>
+            <p class="font-semibold text-white">Unified ranking</p>
+            <p>Aggregate scores across selected value dimensions.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-400/20 text-amber-200">
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 3v18"></path>
+              <path d="M5 12h14"></path>
+            </svg>
+          </span>
+          <div>
+            <p class="font-semibold text-white">Transparent evidence</p>
+            <p>Case-level justifications (coming soon).</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-400/20 text-emerald-200">
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 6l7 12H5l7-12z"></path>
+            </svg>
+          </span>
+          <div>
+            <p class="font-semibold text-white">Versioned results</p>
+            <p>Reproducible scoring across snapshots.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto w-full max-w-6xl px-6 pb-8">
+  <div class="glass rounded-2xl p-6">
+    <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-wrap gap-2 text-sm font-medium">
+        {tabLinks.map((tab) => (
+          <a
+            href={`${base}${tab.path}?${queryString}`}
+            data-tab-link
+            data-tab-path={tab.path}
+            class={`rounded-full px-4 py-2 transition ${tab.id === activeTab ? 'bg-white text-slate-950' : 'text-slate-300 hover:bg-white/10'}`}
+          >
+            {tab.label}
+          </a>
+        ))}
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="text-xs uppercase tracking-[0.2em] text-slate-400">Value system</label>
+        <select id="system-select" class="rounded-full border border-white/10 bg-slate-900 px-4 py-2 text-sm text-white" data-system-select>
+          {valueSystems.map((system) => (
+            <option value={system.id} selected={system.id === selectedSystem.id}>{system.name}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+    <div class="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+      <div>
+        <div class="flex flex-wrap gap-2" data-dimension-group>
+          {valueSystems.map((system) => (
+            <div class={system.id === selectedSystem.id ? 'flex flex-wrap gap-2' : 'hidden'} data-dimension-set={system.id}>
+              {system.dimensions.map((dim) => (
+                <label class="flex items-center gap-2 rounded-full border border-white/10 bg-slate-900/70 px-4 py-2 text-xs text-slate-200">
+                  <input
+                    type="checkbox"
+                    value={dim.id}
+                    checked={selectedDimensions.includes(dim.id)}
+                    class="h-3 w-3 rounded border-white/30 bg-slate-950 text-cyan-400"
+                    data-dimension-checkbox
+                  />
+                  {dim.name}
+                </label>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-start gap-3 lg:justify-end">
+        <button class="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-slate-300 hover:bg-white/5" data-select-all>Select All</button>
+        <button class="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-slate-300 hover:bg-white/5" data-clear-all>Clear</button>
+        <button class="rounded-full bg-cyan-400 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-950" data-apply>Apply</button>
+        <button class="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-slate-300 hover:bg-white/5" data-reset>Reset</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto w-full max-w-6xl px-6 pb-16">
+  <slot />
+</section>
+
+<script define:vars={{ valueSystems, base }}>
+  const systemSelect = document.querySelector('[data-system-select]');
+  const selectAllButton = document.querySelector('[data-select-all]');
+  const clearButton = document.querySelector('[data-clear-all]');
+  const applyButton = document.querySelector('[data-apply]');
+  const resetButton = document.querySelector('[data-reset]');
+  const dimensionSets = document.querySelectorAll('[data-dimension-set]');
+
+  const setVisibleSystem = (systemId) => {
+    dimensionSets.forEach((set) => {
+      set.classList.toggle('hidden', set.dataset.dimensionSet !== systemId);
+    });
+  };
+
+  const getActiveDimensionSet = () => {
+    return document.querySelector(`[data-dimension-set="${systemSelect.value}"]`);
+  };
+
+  const getSelectedDimensions = () => {
+    const activeSet = getActiveDimensionSet();
+    if (!activeSet) return [];
+    return Array.from(activeSet.querySelectorAll('input[type="checkbox"]'))
+      .filter((input) => input.checked)
+      .map((input) => input.value);
+  };
+
+  const updateTabLinks = (systemId, dimensions) => {
+    const query = `system=${systemId}&dims=${dimensions.join(',')}`;
+    document.querySelectorAll('[data-tab-link]').forEach((link) => {
+      const path = link.getAttribute('data-tab-path');
+      link.setAttribute('href', `${base}${path}?${query}`);
+    });
+  };
+
+  const selectAll = () => {
+    const activeSet = getActiveDimensionSet();
+    if (!activeSet) return;
+    activeSet.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+      input.checked = true;
+    });
+  };
+
+  const clearAll = () => {
+    const activeSet = getActiveDimensionSet();
+    if (!activeSet) return;
+    activeSet.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+      input.checked = false;
+    });
+  };
+
+  systemSelect?.addEventListener('change', (event) => {
+    const systemId = event.target.value;
+    setVisibleSystem(systemId);
+    selectAll();
+    updateTabLinks(systemId, getSelectedDimensions());
+  });
+
+  selectAllButton?.addEventListener('click', () => {
+    selectAll();
+    updateTabLinks(systemSelect.value, getSelectedDimensions());
+  });
+
+  clearButton?.addEventListener('click', () => {
+    clearAll();
+    updateTabLinks(systemSelect.value, getSelectedDimensions());
+  });
+
+  applyButton?.addEventListener('click', () => {
+    const selected = getSelectedDimensions();
+    if (selected.length === 0) {
+      selectAll();
+    }
+    const systemId = systemSelect.value;
+    const dims = getSelectedDimensions();
+    const url = new URL(window.location.href);
+    url.searchParams.set('system', systemId);
+    url.searchParams.set('dims', dims.join(','));
+    window.location.href = url.toString();
+  });
+
+  resetButton?.addEventListener('click', () => {
+    const defaultSystem = valueSystems[0]?.id || systemSelect.value;
+    systemSelect.value = defaultSystem;
+    setVisibleSystem(defaultSystem);
+    selectAll();
+    const dims = getSelectedDimensions();
+    updateTabLinks(defaultSystem, dims);
+    const url = new URL(window.location.href);
+    url.searchParams.set('system', defaultSystem);
+    url.searchParams.set('dims', dims.join(','));
+    window.location.href = url.toString();
+  });
+
+  setVisibleSystem(systemSelect?.value);
+  updateTabLinks(systemSelect?.value, getSelectedDimensions());
+</script>

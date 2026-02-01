@@ -1,0 +1,202 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BenchmarkShell from '../../components/BenchmarkShell.astro';
+import { agents, valueSystems } from '../../data/avbData';
+
+const base = import.meta.env.BASE_URL;
+const searchParams = Astro.url.searchParams;
+const defaultSystem = valueSystems[0];
+const selectedSystemId = searchParams.get('system') || defaultSystem.id;
+const selectedSystem = valueSystems.find((system) => system.id === selectedSystemId) || defaultSystem;
+const selectedDimensions = (searchParams.get('dims') || selectedSystem.dimensions.map((dim) => dim.id).join(','))
+  .split(',')
+  .filter(Boolean);
+
+const dimensionAverages = selectedSystem.dimensions.map((dim) => {
+  const values = agents.map((agent) => agent.scores[selectedSystem.id]?.[dim.id] || 0);
+  const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+  return {
+    ...dim,
+    average: Math.round(average)
+  };
+});
+
+const systemLinks = valueSystems.map((system) => {
+  const dims = system.dimensions.map((dim) => dim.id).join(',');
+  return {
+    id: system.id,
+    label: system.shortName,
+    href: `${base}benchmark?system=${system.id}&dims=${dims}`
+  };
+});
+---
+
+<BaseLayout title="Benchmark · Agent-ValueBench">
+  <BenchmarkShell activeTab="benchmarks" title="Benchmark" intro="Compare agents across value systems, drill into dimensions, and inspect leaderboard trends. Use the filters to narrow what you care about most.">
+    <section class="space-y-6">
+      <div class="glass rounded-2xl p-6">
+        <div class="flex flex-wrap items-center gap-3">
+          {systemLinks.map((link) => (
+            <a
+              href={link.href}
+              class={`rounded-full px-4 py-2 text-xs uppercase tracking-[0.2em] ${link.id === selectedSystem.id ? 'bg-white text-slate-950' : 'border border-white/10 text-slate-300 hover:bg-white/10'}`}
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+        <div class="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {dimensionAverages.map((dim) => (
+            <div class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
+              <p class="text-xs uppercase tracking-[0.2em] text-slate-400">{dim.name}</p>
+              <div class="mt-3 flex items-center justify-between">
+                <span class="text-2xl font-semibold text-white">{dim.average}</span>
+                <span class="text-xs text-slate-400">avg</span>
+              </div>
+              <div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                <div class="h-full rounded-full bg-cyan-400" style={`width: ${dim.average}%;`}></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl p-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p class="text-lg font-semibold text-white">Leaderboard</p>
+            <p class="text-sm text-slate-300">Ranks update based on your current value system + dimension filters.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <input
+              type="search"
+              placeholder="Search agent name..."
+              class="w-60 rounded-full border border-white/10 bg-slate-950 px-4 py-2 text-sm text-white"
+              data-search
+            />
+            <button class="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-slate-300" data-sort>Sort by score</button>
+          </div>
+        </div>
+
+        <div class="mt-6 overflow-auto">
+          <table class="min-w-full text-left text-sm">
+            <thead class="text-xs uppercase tracking-[0.2em] text-slate-400">
+              <tr>
+                <th class="py-3 pr-4">Rank</th>
+                <th class="py-3 pr-4">Agent Name</th>
+                <th class="py-3 pr-4">Developer</th>
+                <th class="py-3 pr-4">Score</th>
+                <th class="py-3 pr-4">Release Date</th>
+                <th class="py-3 pr-4">Compare</th>
+                <th class="py-3">Details</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5" data-leaderboard></tbody>
+          </table>
+        </div>
+
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-4 text-sm text-slate-400">
+          <div data-pagination-info>Showing 1-5</div>
+          <div class="flex items-center gap-2">
+            <button class="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em]" data-prev>Prev</button>
+            <button class="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em]" data-next>Next</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </BenchmarkShell>
+</BaseLayout>
+
+<script define:vars={{ agents, selectedSystemId, selectedDimensions, base }}>
+  const tableBody = document.querySelector('[data-leaderboard]');
+  const searchInput = document.querySelector('[data-search]');
+  const sortButton = document.querySelector('[data-sort]');
+  const prevButton = document.querySelector('[data-prev]');
+  const nextButton = document.querySelector('[data-next]');
+  const paginationInfo = document.querySelector('[data-pagination-info]');
+
+  let currentPage = 1;
+  const pageSize = 5;
+  let sortDescending = true;
+
+  const computeScore = (agent) => {
+    const systemScores = agent.scores[selectedSystemId] || {};
+    const dims = selectedDimensions.length ? selectedDimensions : Object.keys(systemScores);
+    const values = dims.map((dim) => systemScores[dim]).filter((value) => typeof value === 'number');
+    if (values.length === 0) return 0;
+    return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+  };
+
+  const getRows = () => {
+    const query = searchInput?.value?.toLowerCase() || '';
+    const filtered = agents.filter((agent) => agent.name.toLowerCase().includes(query));
+    const scored = filtered.map((agent) => ({
+      ...agent,
+      score: computeScore(agent)
+    }));
+    scored.sort((a, b) => sortDescending ? b.score - a.score : a.score - b.score);
+    return scored;
+  };
+
+  const renderTable = () => {
+    if (!tableBody) return;
+    const rows = getRows();
+    const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+    currentPage = Math.min(currentPage, totalPages);
+    const startIndex = (currentPage - 1) * pageSize;
+    const pageRows = rows.slice(startIndex, startIndex + pageSize);
+    const baseUrl = base.endsWith('/') ? base : `${base}/`;
+
+    tableBody.innerHTML = pageRows.map((agent, index) => {
+      const rank = startIndex + index + 1;
+      const analysisUrl = `${baseUrl}benchmark/analysis?system=${selectedSystemId}&dims=${selectedDimensions.join(',')}&agent=${agent.id}`;
+      return `
+        <tr>
+          <td class="py-3 pr-4 text-white">${rank}</td>
+          <td class="py-3 pr-4 text-white">
+            <a class="text-cyan-200 hover:text-cyan-100" href="${analysisUrl}">${agent.name}</a>
+          </td>
+          <td class="py-3 pr-4 text-slate-300">${agent.developer}</td>
+          <td class="py-3 pr-4 text-white">${agent.score}</td>
+          <td class="py-3 pr-4 text-slate-300">${agent.releaseDate}</td>
+          <td class="py-3 pr-4">
+            <button class="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300">+ Add</button>
+          </td>
+          <td class="py-3 text-slate-300">
+            <a class="text-cyan-200 hover:text-cyan-100" href="${analysisUrl}">View</a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (paginationInfo) {
+      const start = rows.length === 0 ? 0 : startIndex + 1;
+      const end = Math.min(startIndex + pageRows.length, rows.length);
+      paginationInfo.textContent = `Showing ${start}-${end} of ${rows.length}`;
+    }
+  };
+
+  searchInput?.addEventListener('input', () => {
+    currentPage = 1;
+    renderTable();
+  });
+
+  sortButton?.addEventListener('click', () => {
+    sortDescending = !sortDescending;
+    renderTable();
+  });
+
+  prevButton?.addEventListener('click', () => {
+    currentPage = Math.max(1, currentPage - 1);
+    renderTable();
+  });
+
+  nextButton?.addEventListener('click', () => {
+    const rows = getRows();
+    const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+    currentPage = Math.min(totalPages, currentPage + 1);
+    renderTable();
+  });
+
+  renderTable();
+</script>

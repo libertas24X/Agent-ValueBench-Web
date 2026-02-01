@@ -1,0 +1,249 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BenchmarkShell from '../../components/BenchmarkShell.astro';
+import { agents, valueSystems } from '../../data/avbData';
+
+const searchParams = Astro.url.searchParams;
+const defaultSystem = valueSystems[0];
+const selectedSystemId = searchParams.get('system') || defaultSystem.id;
+const selectedSystem = valueSystems.find((system) => system.id === selectedSystemId) || defaultSystem;
+const selectedDimensions = (searchParams.get('dims') || selectedSystem.dimensions.map((dim) => dim.id).join(','))
+  .split(',')
+  .filter(Boolean);
+
+const defaultAgents = [agents[0], agents[1] || agents[0], agents[2] || agents[0]];
+const agentAId = searchParams.get('a') || defaultAgents[0].id;
+const agentBId = searchParams.get('b') || defaultAgents[1].id;
+const agentCId = searchParams.get('c') || defaultAgents[2].id;
+
+const selectedAgents = [
+  agents.find((agent) => agent.id === agentAId) || defaultAgents[0],
+  agents.find((agent) => agent.id === agentBId) || defaultAgents[1],
+  agents.find((agent) => agent.id === agentCId) || defaultAgents[2]
+];
+
+const dimensions = selectedDimensions.length
+  ? selectedDimensions.map((dimId) => selectedSystem.dimensions.find((dim) => dim.id === dimId) || { id: dimId, name: dimId })
+  : selectedSystem.dimensions;
+---
+
+<BaseLayout title="Comparison · Agent-ValueBench">
+  <BenchmarkShell activeTab="comparison" title="Comparison" intro="Compare multiple agents side-by-side with synchronized value system filters. Highlight strengths, gaps, and trade-offs.">
+    <section class="space-y-6">
+      <div class="glass rounded-2xl p-6">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p class="text-lg font-semibold text-white">Multi-agent selector</p>
+            <p class="text-sm text-slate-300">Choose up to three agents to compare across the selected dimensions.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <button class="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-slate-300" data-swap>Swap A/B</button>
+            <button class="rounded-full border border-white/10 px-4 py-2 text-xs uppercase tracking-[0.2em] text-slate-300">Add slot</button>
+          </div>
+        </div>
+        <div class="mt-6 grid gap-4 md:grid-cols-3">
+          {['A', 'B', 'C'].map((label, index) => (
+            <div class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
+              <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Agent {label}</p>
+              <select class="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white" data-agent-select={label}>
+                {agents.map((agent) => (
+                  <option value={agent.id} selected={agent.id === selectedAgents[index].id}>{agent.name}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div class="glass rounded-2xl p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-lg font-semibold text-white">Overlay radar</p>
+              <p class="text-sm text-slate-300">Visual comparison across selected dimensions.</p>
+            </div>
+            <div class="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-slate-400">Multi-radar</div>
+          </div>
+          <div class="mt-6 flex items-center justify-center">
+            <svg viewBox="0 0 300 300" class="h-64 w-64" data-compare-radar>
+              <circle cx="150" cy="150" r="120" fill="none" stroke="rgba(148,163,184,0.2)" />
+              <circle cx="150" cy="150" r="80" fill="none" stroke="rgba(148,163,184,0.2)" />
+              <circle cx="150" cy="150" r="40" fill="none" stroke="rgba(148,163,184,0.2)" />
+              <polygon data-radar-a fill="rgba(34,211,238,0.25)" stroke="rgba(34,211,238,0.9)" stroke-width="2"></polygon>
+              <polygon data-radar-b fill="rgba(251,191,36,0.2)" stroke="rgba(251,191,36,0.9)" stroke-width="2"></polygon>
+              <polygon data-radar-c fill="rgba(167,139,250,0.2)" stroke="rgba(167,139,250,0.9)" stroke-width="2"></polygon>
+            </svg>
+          </div>
+          <div class="mt-6 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-slate-400">
+            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-cyan-400"></span>Agent A</span>
+            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-amber-400"></span>Agent B</span>
+            <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-violet-400"></span>Agent C</span>
+          </div>
+        </div>
+        <div class="glass rounded-2xl p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-lg font-semibold text-white">Delta highlights</p>
+              <p class="text-sm text-slate-300">Differences between Agent A and Agent B.</p>
+            </div>
+            <div class="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-slate-400">Delta</div>
+          </div>
+          <div class="mt-6 space-y-4">
+            {dimensions.map((dim) => (
+              <div class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
+                <p class="text-xs uppercase tracking-[0.2em] text-slate-400">{dim.name}</p>
+                <div class="mt-2 flex items-center justify-between text-sm text-white" data-delta-row data-dimension-id={dim.id}>
+                  <span>Δ</span>
+                  <span class="text-slate-300">0</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-lg font-semibold text-white">Comparison table</p>
+            <p class="text-sm text-slate-300">Dimension-level scores with deltas.</p>
+          </div>
+          <div class="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-slate-400">Table</div>
+        </div>
+        <div class="mt-6 overflow-auto">
+          <table class="min-w-full text-left text-sm">
+            <thead class="text-xs uppercase tracking-[0.2em] text-slate-400">
+              <tr>
+                <th class="py-3 pr-4">Dimension</th>
+                <th class="py-3 pr-4">Agent A</th>
+                <th class="py-3 pr-4">Agent B</th>
+                <th class="py-3 pr-4">Δ</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5" data-compare-table></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-lg font-semibold text-white">Case-level comparison</p>
+            <p class="text-sm text-slate-300">Structure ready for per-case side-by-side analysis.</p>
+          </div>
+          <div class="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-slate-400">Coming soon</div>
+        </div>
+        <div class="mt-6 grid gap-4 md:grid-cols-2">
+          <div class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
+            <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Agent A response</p>
+            <p class="mt-3 text-sm text-slate-300">Placeholder summary for selected case.</p>
+          </div>
+          <div class="rounded-2xl border border-white/10 bg-slate-900/80 p-4">
+            <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Agent B response</p>
+            <p class="mt-3 text-sm text-slate-300">Placeholder summary for selected case.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </BenchmarkShell>
+</BaseLayout>
+
+<script define:vars={{ agents, selectedSystemId, dimensions, agentAId, agentBId, agentCId }}>
+  const selects = document.querySelectorAll('[data-agent-select]');
+  const swapButton = document.querySelector('[data-swap]');
+  const compareTable = document.querySelector('[data-compare-table]');
+  const radar = document.querySelector('[data-compare-radar]');
+  const radarA = document.querySelector('[data-radar-a]');
+  const radarB = document.querySelector('[data-radar-b]');
+  const radarC = document.querySelector('[data-radar-c]');
+
+  const getAgentById = (id) => agents.find((agent) => agent.id === id) || agents[0];
+
+  const getSelectedIds = () => {
+    const values = {};
+    selects.forEach((select) => {
+      values[select.dataset.agentSelect.toLowerCase()] = select.value;
+    });
+    return values;
+  };
+
+  const buildRadarPoints = (agent) => {
+    const center = 150;
+    const radius = 110;
+    const points = dimensions.map((dim, index) => {
+      const score = agent.scores[selectedSystemId]?.[dim.id] || 0;
+      const angle = (Math.PI * 2 * index) / dimensions.length - Math.PI / 2;
+      const scaled = score / 100;
+      const x = center + Math.cos(angle) * radius * scaled;
+      const y = center + Math.sin(angle) * radius * scaled;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    });
+    return points.join(' ');
+  };
+
+  const renderTable = (agentA, agentB) => {
+    if (!compareTable) return;
+    compareTable.innerHTML = dimensions.map((dim) => {
+      const scoreA = agentA.scores[selectedSystemId]?.[dim.id] || 0;
+      const scoreB = agentB.scores[selectedSystemId]?.[dim.id] || 0;
+      const delta = scoreA - scoreB;
+      return `
+        <tr>
+          <td class="py-3 pr-4 text-slate-200">${dim.name}</td>
+          <td class="py-3 pr-4 text-white">${scoreA}</td>
+          <td class="py-3 pr-4 text-white">${scoreB}</td>
+          <td class="py-3 pr-4 ${delta >= 0 ? 'text-emerald-300' : 'text-rose-300'}">${delta >= 0 ? '+' : ''}${delta}</td>
+        </tr>
+      `;
+    }).join('');
+  };
+
+  const renderDeltas = (agentA, agentB) => {
+    document.querySelectorAll('[data-delta-row]').forEach((row) => {
+      const dimId = row.dataset.dimensionId;
+      const scoreA = agentA.scores[selectedSystemId]?.[dimId] || 0;
+      const scoreB = agentB.scores[selectedSystemId]?.[dimId] || 0;
+      const delta = scoreA - scoreB;
+      row.querySelector('span:last-child').textContent = `${delta >= 0 ? '+' : ''}${delta}`;
+      row.querySelector('span:last-child').className = delta >= 0 ? 'text-emerald-300' : 'text-rose-300';
+    });
+  };
+
+  const render = () => {
+    const ids = getSelectedIds();
+    const agentA = getAgentById(ids.a);
+    const agentB = getAgentById(ids.b);
+    const agentC = getAgentById(ids.c);
+
+    if (radarA) radarA.setAttribute('points', buildRadarPoints(agentA));
+    if (radarB) radarB.setAttribute('points', buildRadarPoints(agentB));
+    if (radarC) radarC.setAttribute('points', buildRadarPoints(agentC));
+    renderTable(agentA, agentB);
+    renderDeltas(agentA, agentB);
+  };
+
+  selects.forEach((select) => {
+    select.addEventListener('change', () => {
+      const url = new URL(window.location.href);
+      const ids = getSelectedIds();
+      url.searchParams.set('a', ids.a);
+      url.searchParams.set('b', ids.b);
+      url.searchParams.set('c', ids.c);
+      window.location.href = url.toString();
+    });
+  });
+
+  swapButton?.addEventListener('click', () => {
+    const ids = getSelectedIds();
+    const temp = ids.a;
+    ids.a = ids.b;
+    ids.b = temp;
+    const url = new URL(window.location.href);
+    url.searchParams.set('a', ids.a);
+    url.searchParams.set('b', ids.b);
+    url.searchParams.set('c', ids.c);
+    window.location.href = url.toString();
+  });
+
+  render();
+</script>
